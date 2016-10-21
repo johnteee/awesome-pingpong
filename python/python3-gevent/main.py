@@ -14,7 +14,7 @@ class Ponger(Actor):
         global count, startTimestamp
         count += 1
         if count > 1000000:
-            print(time.time())
+            print(time.time() - startTimestamp)
             gevent.kill(ping)
             gevent.kill(pong)
         else :
