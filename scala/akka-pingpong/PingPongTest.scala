@@ -1,0 +1,60 @@
+import akka.actor._
+import java.lang.System._
+
+case object PingMessage
+case object PongMessage
+case object StartMessage
+case object StopMessage
+
+/**
+ * An Akka Actor example written by Alvin Alexander of
+ * http://devdaily.com
+ *
+ * Shared here under the terms of the Creative Commons
+ * Attribution Share-Alike License: http://creativecommons.org/licenses/by-sa/2.5/
+ *
+ * more akka info: http://doc.akka.io/docs/akka/snapshot/scala/actors.html
+ */
+class Ping(pong: ActorRef) extends Actor {
+  var startTimestamp = 0L
+  var count = 0
+  def incrementAndPrint {
+    count += 1;
+    // println("ping")
+  }
+  def receive = {
+    case StartMessage =>
+        startTimestamp = System.currentTimeMillis
+        incrementAndPrint
+        pong ! PingMessage
+    case PongMessage =>
+        incrementAndPrint
+        if (count > 1000000) {
+          sender ! StopMessage
+          println("ping stopped" + (System.currentTimeMillis - startTimestamp))
+          // context.stop(self)
+          context.system.terminate()
+        } else {
+          sender ! PingMessage
+        }
+  }
+}
+
+class Pong extends Actor {
+  def receive = {
+    case PingMessage =>
+        // println("  pong")
+        sender ! PongMessage
+    case StopMessage =>
+        println("pong stopped")
+        // context.stop(self)
+  }
+}
+
+object PingPongTest extends App {
+  val system = ActorSystem("PingPongSystem")
+  val pong = system.actorOf(Props[Pong], name = "pong")
+  val ping = system.actorOf(Props(new Ping(pong)), name = "ping")
+  // start them going
+  ping ! StartMessage
+}
